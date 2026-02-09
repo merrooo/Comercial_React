@@ -1,0 +1,325 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Advanced Product Manager</title>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <style>
+      body {
+        font-family: "Segoe UI", sans-serif;
+        padding: 20px;
+        background: #f0f2f5;
+        color: #333;
+      }
+      .form-card {
+        background: white;
+        padding: 25px;
+        border-radius: 12px;
+        max-width: 700px;
+        margin: auto;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+      }
+      .section {
+        margin-bottom: 20px;
+        padding: 15px;
+        border: 1px solid #eee;
+        border-radius: 8px;
+      }
+      input,
+      select,
+      button {
+        width: 100%;
+        padding: 12px;
+        margin: 8px 0;
+        border-radius: 6px;
+        border: 1px solid #ddd;
+        box-sizing: border-box;
+      }
+
+      button {
+        background: #2563eb;
+        color: white;
+        border: none;
+        font-weight: bold;
+        cursor: pointer;
+        transition: 0.2s;
+      }
+      button:hover {
+        background: #1d4ed8;
+      }
+      .download-btn {
+        background: #059669;
+      }
+      .download-btn:hover {
+        background: #047857;
+      }
+      .clear-btn {
+        background: #dc2626;
+        width: auto;
+        font-size: 0.8rem;
+        padding: 6px 12px;
+      }
+
+      .toggle-group {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 10px;
+      }
+      .toggle-group button {
+        background: #e5e7eb;
+        color: #4b5563;
+        font-size: 0.85rem;
+      }
+      .toggle-group button.active {
+        background: #2563eb;
+        color: white;
+      }
+
+      .preview-img {
+        width: 80px;
+        height: 80px;
+        object-fit: cover;
+        border-radius: 6px;
+        margin-top: 10px;
+        border: 1px solid #ddd;
+      }
+      .json-display {
+        background: #1e1e1e;
+        color: #9cdcfe;
+        padding: 15px;
+        border-radius: 6px;
+        overflow-x: auto;
+        font-size: 11px;
+        position: relative;
+      }
+      .file-path {
+        color: #ce9178;
+        font-family: monospace;
+        display: block;
+        margin-bottom: 8px;
+        font-weight: bold;
+      }
+      label {
+        font-size: 0.85rem;
+        font-weight: bold;
+        color: #666;
+      }
+      h2,
+      h3 {
+        margin-top: 0;
+        color: #111;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+      const { useState, useEffect } = React;
+
+      function Creator() {
+        const [saveMode, setSaveMode] = useState("local"); // "local" or "file"
+        const [imageMode, setImageMode] = useState("url");
+        const [item, setItem] = useState({
+          name: "",
+          price: "",
+          oldPrice: "",
+          image: "",
+          offer: "all",
+        });
+
+        const [storage, setStorage] = useState({
+          "Com_Main.json":
+            JSON.parse(localStorage.getItem("Com_Main.json")) || [],
+          "Com_BigDeal.json":
+            JSON.parse(localStorage.getItem("Com_BigDeal.json")) || [],
+          "Com_BigSale.json":
+            JSON.parse(localStorage.getItem("Com_BigSale.json")) || [],
+          "Com_BlackF.json":
+            JSON.parse(localStorage.getItem("Com_BlackF.json")) || [],
+        });
+
+        const getTargetFile = (offer) => {
+          const mapping = {
+            Big_Deal: "Com_BigDeal.json",
+            Big_Sale: "Com_BigSale.json",
+            Black_Friday: "Com_BlackF.json",
+          };
+          return mapping[offer] || "Com_Main.json";
+        };
+
+        const handleFileUpload = (e) => {
+          const file = e.target.files[0];
+          if (file) {
+            const reader = new FileReader();
+            reader.onloadend = () => setItem({ ...item, image: reader.result });
+            reader.readAsDataURL(file);
+          }
+        };
+
+        const handleAction = () => {
+          if (!item.name || !item.price)
+            return alert("Please fill Name and Price");
+
+          const targetFile = getTargetFile(item.offer);
+          const newItem = {
+            ...item,
+            id: Date.now(),
+            price: parseFloat(item.price),
+            oldPrice: item.oldPrice ? parseFloat(item.oldPrice) : null,
+          };
+          const updatedList = [...storage[targetFile], newItem];
+
+          if (saveMode === "local") {
+            // Option 1: Save to Browser for instant view
+            localStorage.setItem(targetFile, JSON.stringify(updatedList));
+            setStorage({ ...storage, [targetFile]: updatedList });
+            alert(
+              "Updated in Local Storage! Refresh your Shop page to see it.",
+            );
+          } else {
+            // Option 2: Generate JSON File Download
+            const dataStr =
+              "data:text/json;charset=utf-8," +
+              encodeURIComponent(JSON.stringify(updatedList, null, 2));
+            const downloadAnchorNode = document.createElement("a");
+            downloadAnchorNode.setAttribute("href", dataStr);
+            downloadAnchorNode.setAttribute("download", targetFile);
+            document.body.appendChild(downloadAnchorNode);
+            downloadAnchorNode.click();
+            downloadAnchorNode.remove();
+          }
+        };
+
+        return (
+          <div className="form-card">
+            <h2>📦 Advanced Product Manager</h2>
+
+            <div className="section">
+              <label>1. Select Save Target</label>
+              <div className="toggle-group">
+                <button
+                  className={saveMode === "local" ? "active" : ""}
+                  onClick={() => setSaveMode("local")}
+                >
+                  Update Browser (Local Storage)
+                </button>
+                <button
+                  className={saveMode === "file" ? "active" : ""}
+                  onClick={() => setSaveMode("file")}
+                >
+                  Export as .JSON File
+                </button>
+              </div>
+              <p style={{ fontSize: "0.75rem", color: "#666" }}>
+                {saveMode === "local"
+                  ? "Items will appear on your shop instantly on THIS browser."
+                  : "Generates a file. You must upload this to your server folder."}
+              </p>
+            </div>
+
+            <div className="section">
+              <label>2. Product Details</label>
+              <input
+                type="text"
+                placeholder="Product Name"
+                onChange={(e) => setItem({ ...item, name: e.target.value })}
+              />
+              <input
+                type="number"
+                placeholder="Price"
+                onChange={(e) => setItem({ ...item, price: e.target.value })}
+              />
+
+              <label>Image Type</label>
+              <div className="toggle-group">
+                <button
+                  className={imageMode === "url" ? "active" : ""}
+                  onClick={() => setImageMode("url")}
+                >
+                  URL / Path
+                </button>
+                <button
+                  className={imageMode === "upload" ? "active" : ""}
+                  onClick={() => setImageMode("upload")}
+                >
+                  PC Upload
+                </button>
+              </div>
+              {imageMode === "url" ? (
+                <input
+                  type="text"
+                  placeholder="watch.jpg or https://..."
+                  onChange={(e) => setItem({ ...item, image: e.target.value })}
+                />
+              ) : (
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleFileUpload}
+                />
+              )}
+              {item.image && (
+                <img src={item.image} className="preview-img" alt="Preview" />
+              )}
+            </div>
+
+            <div className="section">
+              <label>3. Select Category</label>
+              <select
+                value={item.offer}
+                onChange={(e) => setItem({ ...item, offer: e.target.value })}
+              >
+                <option value="all">Main Page (Com_Main)</option>
+                <option value="Big_Deal">Big Deal</option>
+                <option value="Big_Sale">Big Sale</option>
+                <option value="Black_Friday">Black Friday</option>
+              </select>
+
+              <button
+                className={saveMode === "file" ? "download-btn" : ""}
+                onClick={handleAction}
+              >
+                {saveMode === "local"
+                  ? "Save to Local Storage"
+                  : "Download JSON File"}
+              </button>
+            </div>
+
+            <hr />
+
+            <h3>Current Browser Storage</h3>
+            {Object.keys(storage).map(
+              (fileName) =>
+                storage[fileName].length > 0 && (
+                  <div key={fileName} style={{ marginBottom: "15px" }}>
+                    <div className="json-display">
+                      <span className="file-path">
+                        Folder: Comercials_Show/{fileName}
+                      </span>
+                      <pre>{JSON.stringify(storage[fileName], null, 2)}</pre>
+                    </div>
+                    <button
+                      className="clear-btn"
+                      onClick={() => {
+                        if (confirm("Clear this category?")) {
+                          localStorage.removeItem(fileName);
+                          setStorage({ ...storage, [fileName]: [] });
+                        }
+                      }}
+                    >
+                      Clear {fileName}
+                    </button>
+                  </div>
+                ),
+            )}
+          </div>
+        );
+      }
+
+      ReactDOM.createRoot(document.getElementById("root")).render(<Creator />);
+    </script>
+  </body>
+</html>

@@ -1,0 +1,11 @@
+  [
+  {
+    "id": 3,
+    "name": "Gaming Mobile",
+    "price": 1200.99,
+    "oldPrice": 1600.00,
+    "offer": "Black Friday Deal",
+    "image": "Energy4.png",
+    "category": "Electronics"
+  }
+]

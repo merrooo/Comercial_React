@@ -1,0 +1,312 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>MiniShop - Production Ready</title>
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css"
+    />
+    <style>
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        margin: 0;
+        background: #f4f7f6;
+        color: #333;
+      }
+      .shop-page {
+        max-width: 1100px;
+        margin: 0 auto;
+        padding: 20px;
+      }
+      .main-header {
+        background: white;
+        padding: 25px;
+        border-radius: 15px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+        margin-bottom: 30px;
+      }
+      .header-top {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+      }
+      .hub-nav {
+        display: flex;
+        gap: 10px;
+        overflow-x: auto;
+        padding-bottom: 10px;
+      }
+      .nav-card {
+        text-decoration: none;
+        color: #666;
+        background: #f0f0f0;
+        padding: 12px 24px;
+        border-radius: 30px;
+        font-weight: 600;
+        white-space: nowrap;
+        transition: 0.2s;
+      }
+      .nav-card:hover {
+        background: #e5e5e5;
+      }
+      .nav-card.active {
+        background: #2563eb;
+        color: white;
+      }
+      .products-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+        gap: 25px;
+      }
+      .product-card {
+        background: white;
+        padding: 20px;
+        border-radius: 12px;
+        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.04);
+        text-align: center;
+        transition: transform 0.2s;
+      }
+      .product-card:hover {
+        transform: translateY(-5px);
+      }
+      .img-wrapper {
+        height: 200px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 15px;
+        background: #fff;
+      }
+      .img-wrapper img {
+        max-width: 100%;
+        max-height: 100%;
+        object-fit: contain;
+      }
+      .price-box {
+        font-size: 1.3rem;
+        font-weight: 800;
+        color: #1e293b;
+        margin: 15px 0;
+      }
+      .old-price {
+        text-decoration: line-through;
+        color: #94a3b8;
+        font-size: 0.9rem;
+        margin-right: 8px;
+        font-weight: 400;
+      }
+      .add-to-cart-btn {
+        background: #2563eb;
+        color: white;
+        border: none;
+        padding: 14px;
+        width: 100%;
+        border-radius: 10px;
+        cursor: pointer;
+        font-weight: bold;
+        font-size: 1rem;
+      }
+      .badge {
+        background: #ef4444;
+        color: white;
+        padding: 3px 10px;
+        border-radius: 50px;
+        font-size: 0.85rem;
+      }
+      .loading {
+        text-align: center;
+        padding: 100px;
+        font-size: 1.2rem;
+        color: #666;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
+    <script type="text/babel">
+      const { useState, useEffect } = React;
+
+      // Global fallback for missing images
+      const FALLBACK_IMAGE =
+        "https://via.placeholder.com/400x300?text=Image+Not+Found";
+
+      function Shop() {
+        const [products, setProducts] = useState([]);
+        const [cart, setCart] = useState([]);
+        const [loading, setLoading] = useState(true);
+
+        // Get filter from URL
+        const queryParams = new URLSearchParams(window.location.search);
+        const activeFilter = queryParams.get("filter") || "all";
+
+        useEffect(() => {
+          setLoading(true);
+
+          let folder = "Main_Page";
+          let file = "Com_Main.json";
+
+          // Mapping logic
+          const filterMap = {
+            "big deal": { folder: "Big_Deal", file: "Com_BigDeal.json" },
+            "big sale": { folder: "Big_Sale", file: "Com_BigSale.json" },
+            "black friday": { folder: "Black_Friday", file: "Com_BlackF.json" },
+            all: { folder: "Main_Page", file: "Com_Main.json" },
+          };
+
+          const selection =
+            filterMap[activeFilter.toLowerCase()] || filterMap["all"];
+
+          // IMPORTANT: We use a path starting with / to prevent double-stacking
+          const baseDir = `Comercials_Show/${selection.folder}`;
+          const jsonPath = `/${baseDir}/${selection.file}`;
+
+          console.log(
+            `%c[SYSTEM]: Fetching from: ${jsonPath}`,
+            "color: orange; font-weight: bold;",
+          );
+
+          fetch(jsonPath)
+            .then((res) => {
+              if (!res.ok) throw new Error(`404 at ${jsonPath}`);
+              return res.json();
+            })
+            .then((data) => {
+              const mappedData = data.map((item) => {
+                let finalImg = item.image;
+                if (!finalImg.startsWith("http")) {
+                  // We also use the root-relative path for images
+                  finalImg = `/${baseDir}/${item.image}`;
+                }
+                return { ...item, image: finalImg };
+              });
+
+              setProducts(mappedData);
+              setLoading(false);
+            })
+            .catch((err) => {
+              console.error("Path Error:", err.message);
+              setProducts([]);
+              setLoading(false);
+            });
+        }, [activeFilter]);
+
+        const addToCart = (product) => {
+          setCart([...cart, product]);
+          Swal.fire({
+            title: "Added!",
+            text: `${product.name} added to your cart.`,
+            icon: "success",
+            toast: true,
+            position: "top-end",
+            timer: 2000,
+            showConfirmButton: false,
+          });
+        };
+
+        return (
+          <div className="shop-page">
+            <header className="main-header">
+              <div className="header-top">
+                <h1>🛍️ MiniShop</h1>
+                <div>
+                  🛒 Cart <span className="badge">{cart.length}</span>
+                </div>
+              </div>
+
+              <nav className="hub-nav">
+                <a
+                  href="?filter=all"
+                  className={`nav-card ${activeFilter === "all" ? "active" : ""}`}
+                >
+                  🌐 All Items
+                </a>
+                <a
+                  href="?filter=Big Deal"
+                  className={`nav-card ${activeFilter === "Big Deal" ? "active" : ""}`}
+                >
+                  🔥 Big Deals
+                </a>
+                <a
+                  href="?filter=Big Sale"
+                  className={`nav-card ${activeFilter === "Big Sale" ? "active" : ""}`}
+                >
+                  💰 Big Sale
+                </a>
+                <a
+                  href="?filter=Black Friday"
+                  className={`nav-card ${activeFilter === "Black Friday" ? "active" : ""}`}
+                >
+                  🖤 Black Friday
+                </a>
+              </nav>
+            </header>
+
+            <main>
+              {loading ? (
+                <div className="loading">Updating stock...</div>
+              ) : (
+                <div className="products-grid">
+                  {products.length > 0 ? (
+                    products.map((p) => (
+                      <div className="product-card" key={p.id}>
+                        <div className="img-wrapper">
+                          <img
+                            src={p.image}
+                            alt={p.name}
+                            onError={(e) => {
+                              console.warn(`Broken image: ${e.target.src}`);
+                              e.target.src = FALLBACK_IMAGE;
+                            }}
+                          />
+                        </div>
+                        <h3>{p.name}</h3>
+                        <div className="price-box">
+                          {p.oldPrice && (
+                            <span className="old-price">${p.oldPrice}</span>
+                          )}
+                          <span>${p.price}</span>
+                        </div>
+                        <button
+                          className="add-to-cart-btn"
+                          onClick={() => addToCart(p)}
+                        >
+                          Add to Cart
+                        </button>
+                      </div>
+                    ))
+                  ) : (
+                    <div
+                      style={{
+                        gridColumn: "1/-1",
+                        textAlign: "center",
+                        padding: "40px",
+                      }}
+                    >
+                      <h3>No products available in this section.</h3>
+                      <p>
+                        Check the console (F12) to see if the JSON path is
+                        correct.
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
+            </main>
+          </div>
+        );
+      }
+
+      const root = ReactDOM.createRoot(document.getElementById("root"));
+      root.render(<Shop />);
+    </script>
+  </body>
+</html>
