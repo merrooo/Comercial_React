@@ -1,261 +1,264 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Mini Shop | Premium Deals</title>
-    <link rel="stylesheet" href="/Comercials_Show/Comercial.css" />
-    <link
-      rel="stylesheet"
-      href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css"
-    />
-  </head>
-  <body>
-    <div id="root"></div>
 
-    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mini Shop | Big Sale</title>
+  <link rel="stylesheet" href="/Comercials_Show/Comercial.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" />
+</head>
 
-    <script type="text/babel">
-      const { useState, useEffect } = React;
+<body>
+  <div id="root"></div>
 
-      function CountdownTimer({ hours = 12 }) {
-        const [time, setTime] = useState({ h: hours, m: 45, s: 0 });
-        useEffect(() => {
-          const timer = setInterval(() => {
-            setTime((prev) => {
-              if (prev.s > 0) return { ...prev, s: prev.s - 1 };
-              if (prev.m > 0) return { ...prev, m: prev.m - 1, s: 59 };
-              if (prev.h > 0) return { h: prev.h - 1, m: 59, s: 59 };
-              return prev;
-            });
-          }, 1000);
-          return () => clearInterval(timer);
-        }, []);
-        return (
-          <span>
-            {String(time.h).padStart(2, "0")}h {String(time.m).padStart(2, "0")}
-            m {String(time.s).padStart(2, "0")}s
-          </span>
-        );
-      }
+  <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
-      function Shop() {
-        const [products, setProducts] = useState([]);
-        const [filteredProducts, setFilteredProducts] = useState([]);
-        const [cart, setCart] = useState([]);
-        const [activeAd, setActiveAd] = useState(0);
+  <script type="text/babel">
+    const { useState, useEffect } = React;
 
-        const ads = [
-          {
-            tag: "SEASON SALE",
-            title: "BIG BLACK FRIDAY SALE",
-            desc: "Up to 70% off on all Tech & Gadgets.",
-            color: "gold",
-            filter: "black friday",
-          },
-          {
-            tag: "EXCLUSIVE",
-            title: "FLASH DEAL FRIDAY",
-            desc: "Blink and you'll miss these 50% price drops.",
-            color: "red",
-            filter: "flash",
-          },
-          {
-            tag: "NEW ARRIVALS",
-            title: "PREMIUM COLLECTION",
-            desc: "Check out our newest catalog with special launch offers.",
-            color: "blue",
-            filter: "offer",
-          },
-        ];
+    // Unified Key - Must match all other pages
+    const GLOBAL_CART_KEY = "miniShop_Universal_Cart";
+    const FALLBACK_IMAGE = "https://via.placeholder.com/400x300?text=Image+Not+Found";
 
-        useEffect(() => {
-          // Auto-rotate ads every 5 seconds
-          const adInterval = setInterval(() => {
-            setActiveAd((prev) => (prev + 1) % ads.length);
-          }, 5000);
-          return () => clearInterval(adInterval);
-        }, []);
+    function CountdownTimer({ hours = 12 }) {
+      const [time, setTime] = useState({ h: hours, m: 45, s: 0 });
+      useEffect(() => {
+        const timer = setInterval(() => {
+          setTime((prev) => {
+            if (prev.s > 0) return { ...prev, s: prev.s - 1 };
+            if (prev.m > 0) return { ...prev, m: prev.m - 1, s: 59 };
+            if (prev.h > 0) return { h: prev.h - 1, m: 59, s: 59 };
+            return prev;
+          });
+        }, 1000);
+        return () => clearInterval(timer);
+      }, []);
+      return (
+        <span>
+          {String(time.h).padStart(2, "0")}h {String(time.m).padStart(2, "0")}m {String(time.s).padStart(2, "0")}s
+        </span>
+      );
+    }
 
-        useEffect(() => {
-          fetch("/Comercials_Show/Comercial.json")
-            .then((res) => res.json())
-            .then((data) => {
-              const processed = data.map((p) => ({
-                ...p,
-                image:
-                  p.image && !p.image.startsWith("http")
-                    ? `/images/${p.image}`
-                    : p.image,
-              }));
-              setProducts(processed);
-              setFilteredProducts(processed);
-            })
-            .catch((err) => console.error(err));
-        }, []);
+    function Shop() {
+      const [products, setProducts] = useState([]);
+      const [activeAd, setActiveAd] = useState(0);
+      const [isCartOpen, setIsCartOpen] = useState(false);
 
-        const applyFilter = (type) => {
-          if (type === "all") {
-            setFilteredProducts(products);
-          } else {
-            const filtered = products.filter((p) =>
-              p.offer?.toLowerCase().includes(type.toLowerCase()),
-            );
-            setFilteredProducts(filtered);
+      // --- 1. PERSISTENT GLOBAL CART ---
+      const [cart, setCart] = useState(() => {
+        const saved = localStorage.getItem(GLOBAL_CART_KEY);
+        return saved ? JSON.parse(saved) : [];
+      });
+
+      const ads = [
+        {tag: "ALL PAGES ", title: "MAIN SHOW", desc: "MAIN.", color: "black", filter: "main"},
+        { tag: "EXCLUSIVE", title: "FLASH DEAL", desc: "Blink and you'll miss these drops.", color: "red", filter: "flash" },
+        { tag: "NEW", title: "PREMIUM SELECTION", desc: "Special launch offers.", color: "blue", filter: "offer" },
+      ];
+
+      // --- 2. MULTI-TAB SYNC ---
+      useEffect(() => {
+        const handleStorageChange = (e) => {
+          if (e.key === GLOBAL_CART_KEY) {
+            setCart(JSON.parse(e.newValue || "[]"));
           }
-          // Scroll to product section
-          document
-            .getElementById("shop-main")
-            .scrollIntoView({ behavior: "smooth" });
         };
+        window.addEventListener("storage", handleStorageChange);
+        return () => window.removeEventListener("storage", handleStorageChange);
+      }, []);
 
-        const addToCart = (p) => {
-          setCart((prev) => {
-            const exists = prev.find((item) => item.id === p.id);
-            if (exists)
-              return prev.map((item) =>
-                item.id === p.id
-                  ? { ...item, quantity: item.quantity + 1 }
-                  : item,
-              );
-            return [...prev, { ...p, quantity: 1 }];
-          });
-          Swal.fire({
-            title: "Added!",
-            icon: "success",
-            toast: true,
-            position: "top-end",
-            showConfirmButton: false,
-            timer: 1000,
-          });
-        };
+      // --- 3. SAVE TO LOCALSTORAGE ---
+      useEffect(() => {
+        localStorage.setItem(GLOBAL_CART_KEY, JSON.stringify(cart));
+      }, [cart]);
 
-        return (
-          <div className="container">
-            <header className="header-wrapper">
-              <nav className="header">
-                <div
-                  className="logo-section"
-                  onClick={() => applyFilter("all")}
-                >
-                  <h1>🛍️ MiniShop</h1>
-                  <p>Quality You Can Trust</p>
-                </div>
+      // --- 4. FETCH DATA ---
+      useEffect(() => {
+        const jsonPath = "/Comercials_Show/Big_Sale/Com_BigSale.json";
+        const imgFolder = "Big_Sale";
 
-                <div className="header-actions">
-                  <button
-                    className="nav-btn bf-btn"
-                    onClick={() => applyFilter("black friday")}
-                  >
-                    🖤 Black Friday
-                  </button>
-                  <button
-                    className="nav-btn offer-btn"
-                    onClick={() => applyFilter("offer")}
-                  >
-                    🔥 Top Offers
-                  </button>
-                  <div
-                    className="cart-container"
-                    onClick={() => {
-                      /* Cart Logic */
-                    }}
-                  >
-                    <span className="cart-icon">🛒</span>
-                    <span className="cart-count">
-                      {cart.reduce((a, b) => a + b.quantity, 0)}
-                    </span>
-                  </div>
-                </div>
-              </nav>
+        fetch(jsonPath)
+          .then((res) => {
+            if (!res.ok) throw new Error("File not found");
+            return res.json();
+          })
+          .then((data) => {
+            const processed = data.map((p) => ({
+              ...p,
+              category: "big_sale",
+              image: p.image && !p.image.startsWith("http")
+                ? `/Comercials_Show/${imgFolder}/${p.image}`
+                : p.image,
+            }));
+            setProducts(processed);
+          })
+          .catch((err) => console.error("Error loading products:", err));
+      }, []);
 
-              <div className="ads-carousel">
-                {ads.map((ad, index) => (
-                  <div
-                    key={index}
-                    className={`ad-slide ${activeAd === index ? "active" : ""} slide-${ad.color}`}
-                  >
-                    <div className="ad-content">
-                      <div className="ad-text">
-                        <span className="promo-tag">{ad.tag}</span>
-                        <h2>{ad.title}</h2>
-                        <p>{ad.desc}</p>
-                        <button
-                          className="ad-cta"
-                          onClick={() => applyFilter(ad.filter)}
-                        >
-                          Shop This Deal →
-                        </button>
-                      </div>
-                      <div className="ad-visual">
-                        <div className="timer-box">
-                          Ends In: <br /> <CountdownTimer hours={24} />
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-                <div className="ad-dots">
-                  {ads.map((_, i) => (
-                    <span
-                      key={i}
-                      className={activeAd === i ? "dot active" : "dot"}
-                      onClick={() => setActiveAd(i)}
-                    ></span>
-                  ))}
-                </div>
-              </div>
-            </header>
+      // Ads rotation logic
+      useEffect(() => {
+        const timer = setInterval(() => setActiveAd(p => (p + 1) % ads.length), 5000);
+        return () => clearInterval(timer);
+      }, []);
 
-            <main className="products-grid" id="shop-main">
-              {filteredProducts.length === 0 ? (
-                <div className="empty-state">
-                  No products found for this offer. <br />
-                  <button onClick={() => applyFilter("all")}>
-                    Show All Products
-                  </button>
-                </div>
+      // --- 5. UNIFIED CART LOGIC ---
+      const addToCart = (product) => {
+        setCart(prev => {
+          const existing = prev.find(item => item.id === product.id && item.name === product.name);
+          if (existing) {
+            return prev.map(item =>
+              (item.id === product.id && item.name === product.name) ? { ...item, quantity: item.quantity + 1 } : item
+            );
+          }
+          return [...prev, { ...product, quantity: 1 }];
+        });
+        setIsCartOpen(true);
+      };
+
+      const updateQuantity = (id, name, delta) => {
+        setCart(prev => prev.map(item => {
+          if (item.id === id && item.name === name) {
+            const newQty = item.quantity + delta;
+            return newQty > 0 ? { ...item, quantity: newQty } : item;
+          }
+          return item;
+        }));
+      };
+
+      const removeFromCart = (id, name) => {
+        setCart(prev => prev.filter(item => !(item.id === id && item.name === name)));
+      };
+
+      const cartTotal = cart.reduce((total, item) => total + (Number(item.price) * item.quantity), 0);
+      const totalItems = cart.reduce((a, b) => a + b.quantity, 0);
+
+      const applyFilter = (type) => {
+        const section = document.getElementById("shop-main");
+        if (section) section.scrollIntoView({ behavior: "smooth" });
+      };
+
+      return (
+        <div className="container">
+          {/* Cart Sidebar UI (Same as Black Friday Page) */}
+          <div className={`cart-overlay ${isCartOpen ? "show" : ""}`} onClick={() => setIsCartOpen(false)}></div>
+          <div className={`cart-sidebar ${isCartOpen ? "open" : ""}`}>
+            <div className="cart-header">
+              <h2>My Bag ({totalItems})</h2>
+              <button className="close-cart" onClick={() => setIsCartOpen(false)}>&times;</button>
+            </div>
+
+            <div className="cart-items">
+              {cart.length === 0 ? (
+                <div className="empty-msg">Your bag is empty</div>
               ) : (
-                filteredProducts.map((p) => (
-                  <div
-                    key={p.id}
-                    className={`product-card ${p.offer?.toLowerCase().includes("black friday") ? "black-friday-card" : ""}`}
-                  >
-                    {p.offer && <div className="offer-badge">{p.offer}</div>}
-                    <div className="product-image-container">
-                      <img src={p.image} alt={p.name} />
-                    </div>
-                    <div className="product-info">
-                      <h3 className="product-title">{p.name}</h3>
-                      <div className="price-section">
-                        <span className="current-price">
-                          ${p.price.toFixed(2)}
-                        </span>
-                        {p.oldPrice && (
-                          <span className="old-price">
-                            ${p.oldPrice.toFixed(2)}
-                          </span>
-                        )}
+                cart.map((item, index) => (
+                  <div key={`${item.id}-${item.name}-${index}`} className="cart-item">
+                    <img src={item.image} alt={item.name} onError={(e) => e.target.src = FALLBACK_IMAGE} />
+                    <div className="cart-item-info">
+                      <h4>{item.name}</h4>
+                      <p className="item-price">${Number(item.price).toFixed(2)}</p>
+                      <div className="qty-controls" style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '5px' }}>
+                        <button className="qty-btn" onClick={() => updateQuantity(item.id, item.name, -1)}>-</button>
+                        <span className="qty-number" style={{ fontWeight: 'bold' }}>{item.quantity}</span>
+                        <button className="qty-btn" onClick={() => updateQuantity(item.id, item.name, 1)}>+</button>
                       </div>
-                      <button
-                        className="add-to-cart-btn"
-                        onClick={() => addToCart(p)}
-                      >
-                        Add to Cart
-                      </button>
+                      <button className="remove-btn" onClick={() => removeFromCart(item.id, item.name)}>Remove</button>
                     </div>
                   </div>
                 ))
               )}
-            </main>
-          </div>
-        );
-      }
+            </div>
 
-      ReactDOM.createRoot(document.getElementById("root")).render(<Shop />);
-    </script>
-  </body>
+            <div className="cart-footer">
+              <div className="total-row">
+                <span>Total:</span>
+                <span>${cartTotal.toFixed(2)}</span>
+              </div>
+              <button className="checkout-btn" disabled={cart.length === 0}
+                onClick={() => Swal.fire("Success", "Connecting to Secure Checkout...", "success")}>
+                Checkout Now
+              </button>
+            </div>
+          </div>
+
+          <header className="header-wrapper">
+            <nav className="header">
+              <div className="logo-section" onClick={() => applyFilter("all")}>
+                <h1>🛍️ MiniShop</h1>
+                <p>Quality You Can Trust</p>
+              </div>
+
+              <div className="header-actions">
+                <button className="nav-btn bf-btn" onClick={() => applyFilter("all")}>
+                  🖤 Big Sale
+                </button>
+                <div className="cart-container" onClick={() => setIsCartOpen(true)}>
+                  <span className="cart-icon">🛒</span>
+                  <span className="cart-count">{totalItems}</span>
+                </div>
+              </div>
+            </nav>
+
+            <div className="ads-carousel">
+              {ads.map((ad, index) => (
+                <div key={index} className={`ad-slide ${activeAd === index ? "active" : ""} slide-${ad.color}`}>
+                  <div className="ad-content">
+                    <div className="ad-text">
+                      <span className="promo-tag">{ad.tag}</span>
+                      <h2>{ad.title}</h2>
+                      <p>{ad.desc}</p>
+                      <button className="ad-cta" onClick={() => applyFilter(ad.filter)}>
+                        Shop This Deal →
+                      </button>
+                    </div>
+                    <div className="ad-visual">
+                      <div className="timer-box">
+                        Ends In: <br /> <CountdownTimer hours={24} />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </header>
+
+          <main className="products-grid" id="shop-main" style={{ padding: '20px' }}>
+            {products.length === 0 ? (
+              <div className="empty-state">Loading products...</div>
+            ) : (
+              products.map((p) => (
+                <div key={p.id} className="product-card">
+                  {p.offer && <div className="offer-badge">{p.offer}</div>}
+                  <div className="product-image-container">
+                    <img src={p.image} alt={p.name} onError={(e) => e.target.src = FALLBACK_IMAGE} />
+                  </div>
+                  <div className="product-info">
+                    <h3 className="product-title">{p.name}</h3>
+                    <div className="price-section">
+                      <span className="current-price">${Number(p.price).toFixed(2)}</span>
+                      {p.oldPrice && (
+                        <span className="old-price">${Number(p.oldPrice).toFixed(2)}</span>
+                      )}
+                    </div>
+                    <button className="add-to-cart-btn" onClick={() => addToCart(p)}>
+                      Add to Cart
+                    </button>
+                  </div>
+                </div>
+              ))
+            )}
+          </main>
+        </div>
+      );
+    }
+
+    ReactDOM.createRoot(document.getElementById("root")).render(<Shop />);
+  </script>
+</body>
+
 </html>

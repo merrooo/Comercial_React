@@ -2,53 +2,6 @@
 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
 
 
-Step 2: Install Git (IMPORTANT OPTIONS)
-
-During installation:
-
-✔ Click Next until you see
-“Adjusting your PATH environment”
-
-👉 Select THIS option (VERY IMPORTANT):
-
-✅ Git from the command line and also from 3rd-party software
-
-Then:
-
-Keep default options
-
-Finish install
-
-🔹 Step 3: RESTART EVERYTHING
-
-This is NOT optional.
-
-🔁 Restart:
-
-VS Code
-
-PowerShell / CMD
-
-(Safest) Restart your PC
-
-🔹 Step 4: Verify Git is installed
-
-Open VS Code → Terminal and run:
-
-git --version
-
-
-✅ You should see something like:
-
-git version 2.44.0.windows.1
-
-🚀 Then retry your commands
-
-git commit -am "update"
-git push
-=======
-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
-
 
 Step 2: Install Git (IMPORTANT OPTIONS)
 
@@ -148,6 +101,7 @@ git remote -v
 
 7️⃣ Upload (PUSH) files 🚀
 git branch -M main
+git pull
 git push -u origin main
 
 If GitHub asks for password
@@ -217,7 +171,7 @@ git pull origin main --rebase
 🔐 If asked → use GitHub token as password.
 
 🔹 Step 2: Push again
-git push origin main
+git push -u origin main
 
 
 ✅ This should work.
