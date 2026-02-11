@@ -218,5 +218,12 @@ Open:
 https://github.com/merrooo/Comercial_React
 
 
+
+
+git add.
+git commit -am "Anything"
+git push
+git status
+
 You should see your files 🎉
 >>>>>>> bb2c03d (initial)
