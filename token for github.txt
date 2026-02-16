@@ -95,6 +95,11 @@ Copy the HTTPS URL from GitHub, then run:
 git remote add origin https://github.com/YOUR_USERNAME/YOUR_REPO_NAME.git
 
 
+for change the your_repro_name
+
+git remote set-url origin https://github.com/merrooo/NDEDC_Smart_Meter.git
+
+
 Check:
 
 git remote -v
