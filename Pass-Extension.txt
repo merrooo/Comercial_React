@@ -4,7 +4,7 @@ amirmerrooo@gmail.com
 
 Pass for github in git
 
-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
+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
 ______________________________________
 
 Turbo Console Log
@@ -32,3 +32,4 @@ Python Environments
 Python Debugger
 Python
 Pylance
+
