@@ -1,7 +1,3 @@
-<<<<<<< HEAD
-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
-
-
 
 Step 2: Install Git (IMPORTANT OPTIONS)
 
