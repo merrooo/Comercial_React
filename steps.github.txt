@@ -15,8 +15,6 @@ git status
 ----------------------------------------------
 
 
-
-
 Step 1: Install Git (IMPORTANT OPTIONS)
 
 During installation:
