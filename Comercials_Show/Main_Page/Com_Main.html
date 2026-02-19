@@ -1,312 +1,236 @@
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>MiniShop - Production Ready</title>
-    <link
-      rel="stylesheet"
-      href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css"
-    />
-    <style>
-      body {
-        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-        margin: 0;
-        background: #f4f7f6;
-        color: #333;
-      }
-      .shop-page {
-        max-width: 1100px;
-        margin: 0 auto;
-        padding: 20px;
-      }
-      .main-header {
-        background: white;
-        padding: 25px;
-        border-radius: 15px;
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
-        margin-bottom: 30px;
-      }
-      .header-top {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 20px;
-      }
-      .hub-nav {
-        display: flex;
-        gap: 10px;
-        overflow-x: auto;
-        padding-bottom: 10px;
-      }
-      .nav-card {
-        text-decoration: none;
-        color: #666;
-        background: #f0f0f0;
-        padding: 12px 24px;
-        border-radius: 30px;
-        font-weight: 600;
-        white-space: nowrap;
-        transition: 0.2s;
-      }
-      .nav-card:hover {
-        background: #e5e5e5;
-      }
-      .nav-card.active {
-        background: #2563eb;
-        color: white;
-      }
-      .products-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-        gap: 25px;
-      }
-      .product-card {
-        background: white;
-        padding: 20px;
-        border-radius: 12px;
-        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.04);
-        text-align: center;
-        transition: transform 0.2s;
-      }
-      .product-card:hover {
-        transform: translateY(-5px);
-      }
-      .img-wrapper {
-        height: 200px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        margin-bottom: 15px;
-        background: #fff;
-      }
-      .img-wrapper img {
-        max-width: 100%;
-        max-height: 100%;
-        object-fit: contain;
-      }
-      .price-box {
-        font-size: 1.3rem;
-        font-weight: 800;
-        color: #1e293b;
-        margin: 15px 0;
-      }
-      .old-price {
-        text-decoration: line-through;
-        color: #94a3b8;
-        font-size: 0.9rem;
-        margin-right: 8px;
-        font-weight: 400;
-      }
-      .add-to-cart-btn {
-        background: #2563eb;
-        color: white;
-        border: none;
-        padding: 14px;
-        width: 100%;
-        border-radius: 10px;
-        cursor: pointer;
-        font-weight: bold;
-        font-size: 1rem;
-      }
-      .badge {
-        background: #ef4444;
-        color: white;
-        padding: 3px 10px;
-        border-radius: 50px;
-        font-size: 0.85rem;
-      }
-      .loading {
-        text-align: center;
-        padding: 100px;
-        font-size: 1.2rem;
-        color: #666;
-      }
-    </style>
-  </head>
-  <body>
-    <div id="root"></div>
 
-    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MiniShop - All Collections</title>
+  <link rel="stylesheet" href="/Comercials_Show/Comercial.css" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css" />
+</head>
 
-    <script type="text/babel">
-      const { useState, useEffect } = React;
+<body>
+  <div id="root"></div>
 
-      // Global fallback for missing images
-      const FALLBACK_IMAGE =
-        "https://via.placeholder.com/400x300?text=Image+Not+Found";
+  <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 
-      function Shop() {
-        const [products, setProducts] = useState([]);
-        const [cart, setCart] = useState([]);
-        const [loading, setLoading] = useState(true);
+  <script type="text/babel">
+    const { useState, useEffect } = React;
 
-        // Get filter from URL
-        const queryParams = new URLSearchParams(window.location.search);
-        const activeFilter = queryParams.get("filter") || "all";
+    // Unified Key - Must match the Black Friday page exactly
+    const GLOBAL_CART_KEY = "miniShop_Universal_Cart";
+    const FALLBACK_IMAGE = "https://via.placeholder.com/400x300?text=Image+Not+Found";
 
-        useEffect(() => {
-          setLoading(true);
+    function Shop() {
+      const [products, setProducts] = useState([]);
+      const [isCartOpen, setIsCartOpen] = useState(false);
+      const [loading, setLoading] = useState(true);
+      const [activeAd, setActiveAd] = useState(0);
 
-          let folder = "Main_Page";
-          let file = "Com_Main.json";
+      // --- 1. PERSISTENT GLOBAL CART ---
+      const [cart, setCart] = useState(() => {
+        const saved = localStorage.getItem(GLOBAL_CART_KEY);
+        return saved ? JSON.parse(saved) : [];
+      });
 
-          // Mapping logic
-          const filterMap = {
-            "big deal": { folder: "Big_Deal", file: "Com_BigDeal.json" },
-            "big sale": { folder: "Big_Sale", file: "Com_BigSale.json" },
-            "black friday": { folder: "Black_Friday", file: "Com_BlackF.json" },
-            all: { folder: "Main_Page", file: "Com_Main.json" },
-          };
+      const ads = [
+        { tag: "SEASON SALE", title: "BIG BLACK FRIDAY SALE", desc: "Up to 70% off on Tech.", color: "gold" },
+        { tag: "EXCLUSIVE", title: "FLASH DEAL FRIDAY", desc: "Blink and you'll miss these drops.", color: "red" },
+        { tag: "NEW ARRIVALS", title: "PREMIUM COLLECTION", desc: "Special launch offers.", color: "blue" },
+      ];
 
-          const selection =
-            filterMap[activeFilter.toLowerCase()] || filterMap["all"];
-
-          // IMPORTANT: We use a path starting with / to prevent double-stacking
-          const baseDir = `Comercials_Show/${selection.folder}`;
-          const jsonPath = `/${baseDir}/${selection.file}`;
-
-          console.log(
-            `%c[SYSTEM]: Fetching from: ${jsonPath}`,
-            "color: orange; font-weight: bold;",
-          );
-
-          fetch(jsonPath)
-            .then((res) => {
-              if (!res.ok) throw new Error(`404 at ${jsonPath}`);
-              return res.json();
-            })
-            .then((data) => {
-              const mappedData = data.map((item) => {
-                let finalImg = item.image;
-                if (!finalImg.startsWith("http")) {
-                  // We also use the root-relative path for images
-                  finalImg = `/${baseDir}/${item.image}`;
-                }
-                return { ...item, image: finalImg };
-              });
-
-              setProducts(mappedData);
-              setLoading(false);
-            })
-            .catch((err) => {
-              console.error("Path Error:", err.message);
-              setProducts([]);
-              setLoading(false);
-            });
-        }, [activeFilter]);
-
-        const addToCart = (product) => {
-          setCart([...cart, product]);
-          Swal.fire({
-            title: "Added!",
-            text: `${product.name} added to your cart.`,
-            icon: "success",
-            toast: true,
-            position: "top-end",
-            timer: 2000,
-            showConfirmButton: false,
-          });
+      // --- 2. MULTI-TAB SYNC ---
+      useEffect(() => {
+        const handleStorageChange = (e) => {
+          if (e.key === GLOBAL_CART_KEY) {
+            setCart(JSON.parse(e.newValue || "[]"));
+          }
         };
+        window.addEventListener("storage", handleStorageChange);
+        return () => window.removeEventListener("storage", handleStorageChange);
+      }, []);
 
-        return (
-          <div className="shop-page">
-            <header className="main-header">
-              <div className="header-top">
+      // --- 3. SAVE TO LOCALSTORAGE ---
+      useEffect(() => {
+        localStorage.setItem(GLOBAL_CART_KEY, JSON.stringify(cart));
+      }, [cart]);
+
+      // --- 4. FETCH DATA (Multi-source) ---
+      useEffect(() => {
+        setLoading(true);
+        const sources = [
+          { folder: "Main_Page", file: "Com_Main.json", label: "General" },
+          { folder: "Big_Deal", file: "Com_BigDeal.json", label: "Big Deal" },
+          { folder: "Big_Sale", file: "Com_BigSale.json", label: "Big Sale" },
+          { folder: "Black_Friday", file: "Com_BlackF.json", label: "Black Friday" }
+        ];
+
+        const fetchPromises = sources.map(src => {
+          const path = `/Comercials_Show/${src.folder}/${src.file}`;
+          return fetch(path)
+            .then(res => res.ok ? res.json() : Promise.resolve([]))
+            .then(data => {
+              if (!Array.isArray(data)) return [];
+              return data.map(item => ({
+                ...item,
+                category: src.label, // Critical for distinguishing items with same ID
+                image: (item.image && item.image.startsWith("http"))
+                  ? item.image
+                  : `/Comercials_Show/${src.folder}/${item.image}`
+              }));
+            })
+            .catch(() => []);
+        });
+
+        Promise.all(fetchPromises).then(results => {
+          setProducts(results.flat());
+          setLoading(false);
+        });
+      }, []);
+
+      // Ads Rotation
+      useEffect(() => {
+        const timer = setInterval(() => setActiveAd(p => (p + 1) % ads.length), 5000);
+        return () => clearInterval(timer);
+      }, []);
+
+      // --- 5. UNIFIED CART ACTIONS ---
+      const addToCart = (product) => {
+        setCart(prev => {
+          const existing = prev.find(item => item.id === product.id && item.name === product.name);
+          if (existing) {
+            return prev.map(item =>
+              (item.id === product.id && item.name === product.name)
+                ? { ...item, quantity: item.quantity + 1 } : item
+            );
+          }
+          return [...prev, { ...product, quantity: 1 }];
+        });
+        setIsCartOpen(true);
+      };
+
+      const updateQuantity = (id, name, delta) => {
+        setCart(prev => prev.map(item => {
+          if (item.id === id && item.name === name) {
+            const newQty = item.quantity + delta;
+            return newQty > 0 ? { ...item, quantity: newQty } : item;
+          }
+          return item;
+        }));
+      };
+
+      const removeFromCart = (id, name) => {
+        setCart(prev => prev.filter(i => !(i.id === id && i.name === name)));
+      };
+
+      const totalPrice = cart.reduce((sum, item) => sum + (parseFloat(item.price) * item.quantity), 0);
+      const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
+
+      return (
+        <div className="container">
+          <div className={`cart-overlay ${isCartOpen ? 'show' : ''}`} onClick={() => setIsCartOpen(false)}></div>
+          <div className={`cart-sidebar ${isCartOpen ? 'open' : ''}`}>
+            <div className="cart-header">
+              <h3>Shopping Bag ({totalItems})</h3>
+              <button className="close-cart" onClick={() => setIsCartOpen(false)}>&times;</button>
+            </div>
+
+            <div className="cart-items">
+              {cart.length === 0 ? (
+                <div style={{ textAlign: 'center', marginTop: '40px', color: '#999' }}>Your bag is empty</div>
+              ) : cart.map((item, idx) => (
+                <div className="cart-item" key={`${item.id}-${item.name}-${idx}`}>
+                  <img src={item.image} onError={(e) => e.target.src = FALLBACK_IMAGE} alt={item.name} />
+                  <div className="cart-item-info">
+                    <h4>{item.name}</h4>
+                    <p style={{ fontSize: '13px', color: '#666' }}>${item.price}</p>
+                    <div className="qty-controls" style={{ display: 'flex', alignItems: 'center', gap: '10px', marginTop: '5px' }}>
+                      <button className="qty-btn" onClick={() => updateQuantity(item.id, item.name, -1)}>-</button>
+                      <span className="qty-number" style={{ fontWeight: 'bold' }}>{item.quantity}</span>
+                      <button className="qty-btn" onClick={() => updateQuantity(item.id, item.name, 1)}>+</button>
+                    </div>
+                    <button className="remove-btn" onClick={() => removeFromCart(item.id, item.name)}>Remove</button>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {cart.length > 0 && (
+              <div className="cart-footer">
+                <div className="total-row">
+                  <span>Total</span>
+                  <span>${totalPrice.toFixed(2)}</span>
+                </div>
+                <button className="checkout-btn" onClick={() => Swal.fire("Success", "Proceeding to checkout...", "success")}>
+                  Checkout Now
+                </button>
+              </div>
+            )}
+          </div>
+
+          <header className="header-wrapper">
+            <nav className="header">
+              <div className="logo-section">
                 <h1>🛍️ MiniShop</h1>
-                <div>
-                  🛒 Cart <span className="badge">{cart.length}</span>
+              </div>
+              <div className="header-actions">
+                <div className="cart-container" onClick={() => setIsCartOpen(true)}>
+                  <span className="cart-icon">🛒</span>
+                  <span className="cart-count">{totalItems}</span>
                 </div>
               </div>
+            </nav>
 
-              <nav className="hub-nav">
-                <a
-                  href="?filter=all"
-                  className={`nav-card ${activeFilter === "all" ? "active" : ""}`}
-                >
-                  🌐 All Items
-                </a>
-                <a
-                  href="?filter=Big Deal"
-                  className={`nav-card ${activeFilter === "Big Deal" ? "active" : ""}`}
-                >
-                  🔥 Big Deals
-                </a>
-                <a
-                  href="?filter=Big Sale"
-                  className={`nav-card ${activeFilter === "Big Sale" ? "active" : ""}`}
-                >
-                  💰 Big Sale
-                </a>
-                <a
-                  href="?filter=Black Friday"
-                  className={`nav-card ${activeFilter === "Black Friday" ? "active" : ""}`}
-                >
-                  🖤 Black Friday
-                </a>
-              </nav>
-            </header>
-
-            <main>
-              {loading ? (
-                <div className="loading">Updating stock...</div>
-              ) : (
-                <div className="products-grid">
-                  {products.length > 0 ? (
-                    products.map((p) => (
-                      <div className="product-card" key={p.id}>
-                        <div className="img-wrapper">
-                          <img
-                            src={p.image}
-                            alt={p.name}
-                            onError={(e) => {
-                              console.warn(`Broken image: ${e.target.src}`);
-                              e.target.src = FALLBACK_IMAGE;
-                            }}
-                          />
-                        </div>
-                        <h3>{p.name}</h3>
-                        <div className="price-box">
-                          {p.oldPrice && (
-                            <span className="old-price">${p.oldPrice}</span>
-                          )}
-                          <span>${p.price}</span>
-                        </div>
-                        <button
-                          className="add-to-cart-btn"
-                          onClick={() => addToCart(p)}
-                        >
-                          Add to Cart
-                        </button>
-                      </div>
-                    ))
-                  ) : (
-                    <div
-                      style={{
-                        gridColumn: "1/-1",
-                        textAlign: "center",
-                        padding: "40px",
-                      }}
-                    >
-                      <h3>No products available in this section.</h3>
-                      <p>
-                        Check the console (F12) to see if the JSON path is
-                        correct.
-                      </p>
+            <div className="ads-carousel">
+              {ads.map((ad, index) => (
+                <div key={index} className={`ad-slide ${activeAd === index ? "active" : ""} slide-${ad.color}`}>
+                  <div className="ad-content">
+                    <div className="ad-text">
+                      <span className="promo-tag">{ad.tag}</span>
+                      <h2>{ad.title}</h2>
+                      <p>{ad.desc}</p>
+                      <button className="ad-cta">Shop Now</button>
                     </div>
-                  )}
+                  </div>
                 </div>
-              )}
-            </main>
-          </div>
-        );
-      }
+              ))}
+            </div>
+          </header>
 
-      const root = ReactDOM.createRoot(document.getElementById("root"));
-      root.render(<Shop />);
-    </script>
-  </body>
+          <main style={{ padding: '20px' }}>
+            {loading ? (
+              <div style={{ textAlign: 'center', padding: '50px' }}><h2>Synchronizing items...</h2></div>
+            ) : (
+              <div className="products-grid">
+                {products.map((p, index) => (
+                  <div className="product-card" key={`${p.id}-${p.category}`}>
+                    <div className="product-image-container">
+                      <img src={p.image} onError={(e) => e.target.src = FALLBACK_IMAGE} alt={p.name} />
+                    </div>
+                    <div className="product-info">
+                      <h3 className="product-title">{p.name}</h3>
+                      <div className="price-section">
+                        <span className="current-price">${p.price}</span>
+                      </div>
+                      <button className="add-to-cart-btn" onClick={() => addToCart(p)}>
+                        Add to Bag
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </main>
+        </div>
+      );
+    }
+
+    const root = ReactDOM.createRoot(document.getElementById("root"));
+    root.render(<Shop />);
+  </script>
+</body>
+
 </html>
